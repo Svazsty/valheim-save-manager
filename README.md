@@ -4,7 +4,7 @@
 
 Mała aplikacja Windows do ręcznej wymiany zapisu świata przez folder Google Drive for desktop. Przed hostowaniem pobierasz świat, a po zakończeniu gry wysyłasz nową wersję. Znajomy korzysta z tego samego folderu Drive i pobiera zapis przed swoją sesją.
 
-Interfejs WPF jest ciemny, inspirowany macOS i używa dołączonej czcionki **Onest**. Aplikacja działa lokalnie, bez serwera i bez integracji z Google Drive API.
+Interfejs WPF jest ciemny i używa dołączonej czcionki **Onest**. Aplikacja działa lokalnie, bez serwera i bez integracji z Google Drive API.
 
 <p align="center">
   <img src="docs/images/main.png" alt="Główne okno Valheim Save Manager" width="448">

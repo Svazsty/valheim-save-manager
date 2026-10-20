@@ -10,7 +10,7 @@ Interfejs WPF jest ciemny, inspirowany macOS i używa dołączonej czcionki **On
   <img src="docs/images/main.png" alt="Główne okno Valheim Save Manager" width="448">
 </p>
 
-> **Stan projektu:** wczesna wersja open source. Silnik i GUI przetestowano na sztucznych światach w Windows PowerShell 5.1. Test prawdziwego świata w grze oraz wymiana przez chmurę między komputerami pozostają do wykonania. Przed pierwszym użyciem zachowaj niezależną kopię swojego świata.
+> **Wersja 0.1.1:** wczesna wersja open source. Silnik i GUI przetestowano na sztucznych światach w Windows PowerShell 5.1. Test prawdziwego świata w grze oraz wymiana przez chmurę między komputerami pozostają do wykonania. Przed pierwszym użyciem zachowaj niezależną kopię swojego świata.
 
 ## Do czego to służy?
 
@@ -99,6 +99,7 @@ Stary config z samym `driveFolder` jest odczytywany; brakująca nazwa świata pr
 | Synchronizacja zablokowana przez grę | Zamknij Valheim i serwer przed ponowieniem operacji. |
 | Błędny ZIP lub CRC32 | Poczekaj na synchronizację Drive. Zachowaj archiwum i sprawdź źródło; nie wymuszaj importu. |
 | Błędny config JSON | Zachowaj kopię pliku, popraw JSON albo zmień jego nazwę, a następnie skonfiguruj aplikację ponownie. Nie usuwaj zapisów ani backupów. |
+| Download nie otwiera potwierdzenia | Sprawdź, czy na pasku tytułu jest 0.1.1. Po kliknięciu status powinien wskazywać oczekiwanie na potwierdzenie. Błędy obsługi przycisku trafiają do `%LOCALAPPDATA%\ValheimSaveManager\gui-error.log`. Zachowaj log i wynik z `history_<świat>.json`, zamiast usuwać konfigurację. |
 
 ## Ograniczenia
 
@@ -131,7 +132,9 @@ powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File .\tests\Test-Gui.ps
 
 Testy silnika używają unikalnego katalogu tymczasowego. Testy GUI tworzą izolowaną kopię aplikacji i sztuczny świat, a zapytanie o uruchomioną grę mockują tylko w tej kopii. Produkcyjny kod zachowuje blokadę gry. Wyniki i fixture'y GUI są w ignorowanym `test-results/`.
 
-Udokumentowany wynik: **23 testy silnika i 22 kontrole WPF** na Windows PowerShell 5.1. To wyniki lokalne; szczegóły oraz pozostałe testy ręczne są w [docs/TESTS.md](docs/TESTS.md). Mechanizm opisano w [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Udokumentowany wynik: **26 testów silnika i 22 kontrole WPF** na Windows PowerShell 5.1. To wyniki lokalne; szczegóły oraz pozostałe testy ręczne są w [docs/TESTS.md](docs/TESTS.md). Mechanizm opisano w [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+Wersja 0.1.1 pozwala wykonać pierwszy download do lokalnego folderu zawierającego tylko cache lub starsze niepełne dane, po zachowaniu i sprawdzeniu ich backupu. Źródłowy ZIP nadal musi zawierać kompletny świat; nowsze lokalne dane świata nadal blokują starszy import. GUI pokazuje oczekiwanie na potwierdzenie, obsługuje błędy kliknięć i respektuje jawny wynik workera zamiast samej flagi `HadErrors`.
 
 ## Licencja
 

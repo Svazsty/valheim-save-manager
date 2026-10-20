@@ -255,6 +255,38 @@ try {
         Assert ((Get-WorldSnapshot $receiver.LocalWorld).Fingerprint -ceq $before.Fingerprint) 'World changed without backup'
         Assert (-not [IO.File]::Exists($receiver.JournalFile)) 'Replacement started before backup'
     }
+    Test 'first download preserves cache-only local folder in verified backup' {
+        $c=New-Case; New-FakeWorld $c.LocalWorld 'complete-remote'; [void](Publish $c)
+        $receiver=Copy-Context $c '-cache-only'
+        [IO.Directory]::CreateDirectory((Join-Path $receiver.LocalWorld 'cacheMinimap')) | Out-Null
+        $cache=Join-Path $receiver.LocalWorld 'cacheMinimap\map'
+        [IO.File]::WriteAllText($cache,'preserve-local-minimap')
+        $before=Get-FolderSnapshot $receiver.LocalWorld
+        $result=Invoke-WorldSync $receiver Download -Confirmed
+        Assert (Test-CompleteWorld $receiver.LocalWorld) 'Complete world was not installed'
+        Assert ((Get-FolderSnapshot $result.Backup).Fingerprint -ceq $before.Fingerprint) 'Cache-only backup differs'
+        Assert ([IO.File]::ReadAllText((Join-Path $result.Backup 'cacheMinimap\map')) -ceq 'preserve-local-minimap') 'Local minimap lost'
+    }
+    Test 'newer partial local save remains protected against older download' {
+        $c=New-Case; New-FakeWorld $c.LocalWorld 'complete-remote'; [void](Publish $c)
+        $receiver=Copy-Context $c '-partial-newer'
+        [IO.Directory]::CreateDirectory($receiver.LocalWorld) | Out-Null
+        $part=Join-Path $receiver.LocalWorld '_main.999.db2'
+        [IO.File]::WriteAllText($part,'preserve-newer-partial-world')
+        [IO.File]::SetLastWriteTimeUtc($part,[DateTime]::UtcNow.AddMinutes(2))
+        $before=Get-FolderSnapshot $receiver.LocalWorld
+        Throws { Invoke-WorldSync $receiver Download -Confirmed } 'nowszy'
+        Assert ((Get-FolderSnapshot $receiver.LocalWorld).Fingerprint -ceq $before.Fingerprint) 'Newer partial world changed'
+    }
+    Test 'cache-only ZIP is still rejected as an import source' {
+        $c=New-Case
+        $package=Join-Path $c.AppDataDir 'cache-only-package'
+        [IO.Directory]::CreateDirectory((Join-Path $package 'world\NewWorld\cacheMinimap')) | Out-Null
+        @{version=1;worldName='NewWorld';createdUtc=[DateTime]::UtcNow.ToString('o');sourceComputer='TEST'} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $package 'manifest.json') -Encoding UTF8
+        [IO.Compression.ZipFile]::CreateFromDirectory($package,(Join-Path $c.DriveFolder 'VALHEIM_NewWorld_999.zip'))
+        Throws { Invoke-WorldSync $c Download -Confirmed } 'Brak kompletnego'
+        Assert (-not (Test-Path -LiteralPath $c.LocalWorld)) 'Cache-only archive was installed'
+    }
     Test 'known corrupt newest archive blocks upload and records last failed attempt' {
         $c=New-Case; New-FakeWorld $c.LocalWorld; $up=Publish $c
         [IO.File]::WriteAllText((Join-Path $c.DriveFolder $up.Archive),'broken')

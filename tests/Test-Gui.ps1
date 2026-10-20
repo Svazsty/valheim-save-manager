@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param([switch]$Launcher)
+param([switch]$Launcher, [switch]$SuppressedWorkerDiagnostic)
 # Native WPF integration test, exclusively on generated fixtures.
 # The test copy mocks only the worker's game-process query. Production is unchanged.
 $ErrorActionPreference='Stop'
@@ -30,7 +30,13 @@ foreach ($ext in @('ok','db2','fwl2','chunks')) {
 $tempScript=Join-Path $project ('.vsm-gui-test-' + [guid]::NewGuid().ToString('N') + '.ps1')
 if ($Launcher) { $tempScript=Join-Path $project 'ValheimSaveManager.ps1' }
 $source=Get-Content -LiteralPath (Join-Path $project 'ValheimSaveManager.ps1') -Raw -Encoding UTF8
-$source=$source.Replace('. $Engine', ". `$Engine`n            function Get-Process { param(`$Name,`$ErrorAction) return @() }")
+$queryMock='function Get-Process { param($Name,$ErrorAction) return @() }'
+if($SuppressedWorkerDiagnostic) {
+    # A suppressed top-level diagnostic sets HadErrors but does not invalidate
+    # the structured result returned by the worker.
+    $queryMock+='; Microsoft.PowerShell.Management\Get-Process -Name VsmDefinitelyAbsent_9534 -ErrorAction SilentlyContinue | Out-Null'
+}
+$source=$source.Replace('. $Engine', ". `$Engine`n            $queryMock")
 $source=$source.Replace('[void]$script:Window.ShowDialog()', ". (Join-Path `$PSScriptRoot 'tests\GuiScenario.ps1')`n    [void]`$script:Window.ShowDialog()")
 [IO.File]::WriteAllText($tempScript,$source,(New-Object Text.UTF8Encoding($true)))
 if ($Launcher) {

@@ -55,6 +55,19 @@ try {
         $script:Controls.BusyBar.Visibility = if ($Busy) { 'Visible' } else { 'Collapsed' }
     }
 
+    function Show-UiError($ErrorRecord) {
+        $message = [string]$ErrorRecord.Exception.Message
+        if ([string]::IsNullOrWhiteSpace($message)) { $message = 'Operacja nie zwrocila poprawnego wyniku. Szczegoly zapisano w gui-error.log.' }
+        $script:Controls.StatusLabel.Text = $message
+        $script:Controls.StatusLabel.Foreground = '#E3B6AF'
+        try {
+            [IO.Directory]::CreateDirectory($script:Context.AppDataDir) | Out-Null
+            $detail = [DateTime]::UtcNow.ToString('o') + "`r`n" + $ErrorRecord.ToString() + "`r`n" + $ErrorRecord.ScriptStackTrace + "`r`n`r`n"
+            [IO.File]::AppendAllText((Join-Path $script:Context.AppDataDir 'gui-error.log'), $detail, (New-Object Text.UTF8Encoding($true)))
+        } catch { }
+        try { [void][Windows.MessageBox]::Show($script:Window, $message, 'Valheim Save Manager - blad operacji', [Windows.MessageBoxButton]::OK, [Windows.MessageBoxImage]::Error) } catch { }
+    }
+
     function Update-Status($Status, [switch]$KeepMessage) {
         $script:Controls.WorldLabel.Text = $script:Context.WorldName
         $script:Controls.WorldLabel.ToolTip = $script:Context.WorldName
@@ -112,7 +125,13 @@ try {
         $worker = $script:Worker
         try {
             $values = @($worker.PowerShell.EndInvoke($worker.Handle))
-            if ($worker.PowerShell.HadErrors -or $values.Count -eq 0) { throw ($worker.PowerShell.Streams.Error | Out-String) }
+            # The structured result owns success/failure. HadErrors can be set by
+            # a suppressed diagnostic even when the worker returned a valid result.
+            if ($values.Count -eq 0) {
+                $details = ($worker.PowerShell.Streams.Error | Out-String).Trim()
+                if (-not $details) { $details = 'Operacja nie zwrocila wyniku. Sprawdz gui-error.log.' }
+                throw $details
+            }
             $value = $values[-1]
             Update-Status $value.Status
             if (-not $value.OK) {
@@ -124,15 +143,19 @@ try {
                 $script:Controls.StatusLabel.Text = "$($value.Result.Operation) · $resultTime`n$($value.Result.Message)"
             }
         } catch {
-            $script:Controls.StatusLabel.Text = $_.Exception.Message
-            $script:Controls.StatusLabel.Foreground = '#E3B6AF'
+            Show-UiError $_
         } finally { $worker.PowerShell.Dispose(); $script:Worker = $null; Set-Busy $false }
     })
     $script:Controls.DownloadButton.Add_Click({
-        $message = "Pobrac najnowszy kompletny ZIP dla '$($script:Context.WorldName)'?`n`nZastapi lokalny swiat. Przed podmiana zostanie utworzony i sprawdzony backup. Starsze archiwum zostanie zablokowane.`n`nZamknij gre i upewnij sie, ze Drive zakonczyl synchronizacje."
-        if ([Windows.MessageBox]::Show($script:Window,$message,'Download World','YesNo','Warning','No') -eq 'Yes') { Start-Worker Download }
+        try {
+            $script:Controls.StatusLabel.Text = 'Download: oczekiwanie na potwierdzenie...'
+            $message = "Pobrac najnowszy kompletny ZIP dla '$($script:Context.WorldName)'?`n`nZastapi lokalny swiat. Przed podmiana zostanie utworzony i sprawdzony backup. Starsze archiwum zostanie zablokowane.`n`nZamknij gre i upewnij sie, ze Drive zakonczyl synchronizacje."
+            $answer = [Windows.MessageBox]::Show($script:Window, $message, 'Download World', [Windows.MessageBoxButton]::YesNo, [Windows.MessageBoxImage]::Warning, [Windows.MessageBoxResult]::No)
+            if ($answer -eq [Windows.MessageBoxResult]::Yes) { Start-Worker Download }
+            else { $script:Controls.StatusLabel.Text = 'Anulowano pobieranie. Niczego nie zmieniono.' }
+        } catch { Show-UiError $_ }
     })
-    $script:Controls.UploadButton.Add_Click({ Start-Worker Upload })
+    $script:Controls.UploadButton.Add_Click({ try { Start-Worker Upload } catch { Show-UiError $_ } })
     $script:Controls.MinimizeButton.Add_Click({ $script:Window.WindowState = 'Minimized' })
     $script:Controls.MaximizeButton.Add_Click({ $script:Window.WindowState = if ($script:Window.WindowState -eq 'Maximized') { 'Normal' } else { 'Maximized' } })
     $script:Controls.CloseButton.Add_Click({ $script:Window.Close() })

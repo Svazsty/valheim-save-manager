@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:system="clr-namespace:System;assembly=mscorlib"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
-        Title="Valheim Save Manager" Width="448" Height="448" MinWidth="432" MinHeight="432"
+        Title="Valheim Save Manager 0.1.1" Width="448" Height="448" MinWidth="432" MinHeight="432"
         WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="CanResize"
         Background="#101113" Foreground="#D9DADD" FontFamily="Segoe UI" FontSize="13"
         UseLayoutRounding="True" SnapsToDevicePixels="True">
@@ -98,7 +98,7 @@
     <Grid>
       <Grid.RowDefinitions><RowDefinition Height="44"/><RowDefinition Height="*"/></Grid.RowDefinitions>
       <Grid Grid.Row="0" Margin="0,0,-12,0">
-        <TextBlock Text="Valheim Save Manager" FontSize="11" FontWeight="Medium" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="55,0,30,0"/>
+        <TextBlock Text="Valheim Save Manager · 0.1.1" FontSize="11" FontWeight="Medium" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="55,0,30,0"/>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="-5,0,0,0" shell:WindowChrome.IsHitTestVisibleInChrome="True">
           <Button x:Name="CloseButton" Style="{StaticResource TrafficLight}" Background="#DF7770" Content="×" ToolTip="Zamknij" AutomationProperties.Name="Zamknij"/>
           <Button x:Name="MinimizeButton" Style="{StaticResource TrafficLight}" Background="#D3B46E" Content="−" ToolTip="Minimalizuj" AutomationProperties.Name="Minimalizuj"/>

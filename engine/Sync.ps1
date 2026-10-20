@@ -131,9 +131,9 @@ function Test-CompleteWorld([string]$Folder) {
     return $false
 }
 
-function Get-WorldSnapshot([string]$Folder) {
+function Get-FolderSnapshot([string]$Folder) {
     Assert-NoLinks $Folder -Tree
-    if (-not (Test-CompleteWorld $Folder)) { throw "Brak kompletnego swiata w $Folder. cacheMinimap nie jest zapisem. W grze wybierz Move to Local." }
+    if (-not (Test-Path -LiteralPath $Folder -PathType Container)) { throw "Brak folderu: $Folder" }
     $lines = New-Object 'System.Collections.Generic.List[string]'
     $latest = [DateTime]::MinValue
     foreach ($file in Get-ChildItem -LiteralPath $Folder -Force -Recurse -File | Sort-Object FullName) {
@@ -146,6 +146,11 @@ function Get-WorldSnapshot([string]$Folder) {
     try { $fingerprint = [BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes(($lines -join "`n")))).Replace('-','') }
     finally { $sha.Dispose() }
     return [pscustomobject]@{ Fingerprint = $fingerprint; LatestWriteUtc = $latest }
+}
+
+function Get-WorldSnapshot([string]$Folder) {
+    if (-not (Test-CompleteWorld $Folder)) { throw "Brak kompletnego swiata w $Folder. cacheMinimap nie jest zapisem. W grze wybierz Move to Local." }
+    return Get-FolderSnapshot $Folder
 }
 
 function Get-LatestArchive($Context) {
@@ -331,9 +336,9 @@ function Download-World($Context, $Progress, [switch]$Confirmed) {
         $hadLocal = Test-Path -LiteralPath $Context.LocalWorld -PathType Container
         $before = $null
         if ($hadLocal) {
-            # Incomplete existing folders are preserved too; no silent deletion of unknown data.
-            if (-not (Test-CompleteWorld $Context.LocalWorld)) { throw 'Istniejacy folder swiata jest niekompletny. Zachowaj go recznie przed importem.' }
-            $before = Get-WorldSnapshot $Context.LocalWorld
+            # A local cache-only/partial folder is backup data, not an import source.
+            # Preserve and verify every byte without requiring it to be a complete world.
+            $before = Get-FolderSnapshot $Context.LocalWorld
             if ($before.Fingerprint -cne $package.Snapshot.Fingerprint -and $before.LatestWriteUtc -gt $package.CreatedUtc) {
                 throw 'Lokalny swiat jest nowszy niz archiwum. Pobranie zablokowane, aby nie cofnac postepu.'
             }
@@ -347,8 +352,8 @@ function Download-World($Context, $Progress, [switch]$Confirmed) {
             $backup = Join-Path $Context.BackupDir ($Context.WorldName + '_before_import_' + (Get-Date).ToString('yyyyMMdd_HHmmssfff') + '_' + [guid]::NewGuid().ToString('N'))
             $backupPending = $backup + '.partial'
             Copy-Item -LiteralPath $Context.LocalWorld -Destination $backupPending -Recurse
-            if ((Get-WorldSnapshot $backupPending).Fingerprint -cne $before.Fingerprint -or
-                (Get-WorldSnapshot $Context.LocalWorld).Fingerprint -cne $before.Fingerprint) { throw 'Swiat zmienil sie lub backup jest niekompletny. Import przerwany.' }
+            if ((Get-FolderSnapshot $backupPending).Fingerprint -cne $before.Fingerprint -or
+                (Get-FolderSnapshot $Context.LocalWorld).Fingerprint -cne $before.Fingerprint) { throw 'Swiat zmienil sie lub backup jest niekompletny. Import przerwany.' }
             [IO.Directory]::Move($backupPending, $backup)
         } elseif (Test-Path -LiteralPath $Context.LocalWorld) { throw 'Folder swiata pojawil sie podczas przygotowania. Import przerwany.' }
         Assert-GameClosed

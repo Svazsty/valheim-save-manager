@@ -2,7 +2,9 @@
 
 Środowisko: Windows, Windows PowerShell **5.1.26100.9711**, natywny WPF/.NET Framework. Wszystkie operacje kopiowania używają sztucznych światów; nigdy nie nadpisywano prawdziwego świata ani danych postaci.
 
-Wynik lokalny z 20.10.2026: **23/23 testy silnika oraz 22/22 kontrole WPF/launchera**. Zmiana motywu przewijania nie modyfikuje silnika synchronizacji. Testy WPF dodatkowo wymuszają długi komunikat, kontrolują brak przewijania poziomego, rzeczywistą szerokość paska 12 jednostek i działanie pionowego przewijania. Podgląd tego stanu: [ciemny pasek](images/scrollbar.png).
+Wynik lokalny z 20.10.2026: **26/26 testów silnika oraz 22/22 kontrole WPF/launchera**. Testy silnika obejmują dodatkowo pierwszy import do folderu z samym cache, zachowanie backupu tego folderu, ochronę nowszego niepełnego zapisu oraz odrzucenie cache-only ZIP-a. Testy WPF wymuszają długi komunikat, kontrolują brak przewijania poziomego, rzeczywistą szerokość paska 12 jednostek i działanie pionowego przewijania. Podgląd tego stanu: [ciemny pasek](images/scrollbar.png).
+
+Test `Test-Gui.ps1 -Launcher -SuppressedWorkerDiagnostic` dodatkowo wprowadza faktycznie tłumione wyszukanie nieistniejącego procesu na poziomie skryptu workera. GUI ma respektować zwrócony wynik nawet przy `PowerShell.HadErrors=true`. Samo wyszukanie procesu wewnątrz oryginalnej funkcji nie odtworzyło zgłoszonej awarii, więc nie jest uznawane za ustaloną przyczynę problemu konkretnego użytkownika. Próba ręcznego testu natywnego potwierdzenia została przerwana; jego zachowanie na komputerze zgłaszającym problem pozostaje niezweryfikowane.
 
 ## Automatyczna weryfikacja
 

@@ -1,0 +1,36 @@
+# Runtime and private data
+config.json
+state_*.json
+history_*.json
+operation.lock
+Backups/
+*.zip
+*.uploading
+*.db
+*.fwl
+*.db2
+*.fwl2
+*.chunk
+*.chunks
+*.ok
+worlds_local/
+characters*/
+cacheMinimap/
+.vsm-*
+test-results/
+# Windows PowerShell cache created only by isolated USERPROFILE test sessions
+/Microsoft/
+# Local historical source copies and workstation audit
+/original/
+/docs/AUDIT.md
+# Test scratch, editor and OS files
+*.log
+*.tmp
+.vs/
+.vscode/
+Thumbs.db
+desktop.ini
+.env
+.env.*
+*.pfx
+*.pem

@@ -1,0 +1,10 @@
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.vbs text eol=crlf
+*.xaml text eol=lf
+*.cs text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.ttf binary
+*.png binary
